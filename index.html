@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APEX Quant Terminal</title>
+<style>
+:root{--bg:#05080a;--panel:#0a1014;--line:#13212a;--g:#00ff88;--g2:#00c46a;--r:#ff3b5c;--txt:#b8c7d1;--dim:#5b6f7c;--y:#ffd23f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:12px/1.4 "SF Mono",Menlo,Consolas,monospace;height:100vh;overflow:hidden}
+header{display:flex;align-items:center;gap:24px;padding:8px 16px;border-bottom:1px solid var(--line);background:#070c0f;flex-wrap:wrap}
+.logo{color:var(--g);font-weight:700;letter-spacing:2px;font-size:14px}
+.logo span{color:var(--dim);font-weight:400}
+.stat{display:flex;flex-direction:column}
+.stat b{font-size:16px;color:#fff}
+.stat small{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.up{color:var(--g)!important}.dn{color:var(--r)!important}
+.live{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--g)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:p 1s infinite}
+@keyframes p{50%{opacity:.2}}
+.ticker{white-space:nowrap;overflow:hidden;border-bottom:1px solid var(--line);background:#06090b;padding:4px 0}
+.ticker div{display:inline-block;animation:t 40s linear infinite}
+.ticker span{margin-right:28px}
+@keyframes t{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+main{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:1.3fr 1fr;gap:6px;padding:6px;height:calc(100vh - 82px)}
+.p{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.p h3{font-size:10px;font-weight:600;color:var(--dim);letter-spacing:1.5px;padding:6px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.p h3 em{font-style:normal;color:var(--g)}
+canvas{width:100%;flex:1;display:block;min-height:0}
+#main{grid-row:1;grid-column:1}
+#code{grid-column:2;grid-row:1/3}
+#book{grid-column:3;grid-row:1}
+#minis{grid-column:1;grid-row:2;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:none;border:none}
+#feed{grid-column:3;grid-row:2}
+.log{flex:1;overflow:hidden;padding:6px 10px;color:var(--g);font-size:11px;text-shadow:0 0 4px rgba(0,255,136,.4)}
+.log div{white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.log .c{color:#3d8f66}.log .w{color:var(--y)}.log .ok{color:#fff}
+table{width:100%;border-collapse:collapse;font-size:11px}
+td{padding:2px 10px;text-align:right}
+td:first-child{text-align:left}
+.bk{flex:1;overflow:hidden}
+.bar{position:relative}
+.bar::before{content:"";position:absolute;right:0;top:1px;bottom:1px;width:var(--w);background:var(--c);opacity:.12}
+.spread{text-align:center;padding:4px;color:#fff;font-size:14px;border-block:1px solid var(--line)}
+.toast{position:fixed;right:20px;bottom:20px;background:#04150d;border:1px solid var(--g);color:var(--g);padding:14px 18px;font-size:14px;box-shadow:0 0 30px rgba(0,255,136,.35);transform:translateX(130%);transition:.4s}
+.toast.on{transform:none}
+.toast b{display:block;font-size:22px;color:#fff}
+.flash{animation:f .6s}
+@keyframes f{0%{background:rgba(0,255,136,.25)}}
+@media (max-width:900px){body{overflow:auto;height:auto}main{grid-template-columns:1fr;grid-template-rows:none;height:auto}#main,#code,#book,#minis,#feed{grid-column:1;grid-row:auto;height:320px}#minis{grid-template-columns:1fr;height:auto}#minis .p{height:160px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">APEX<span>//QUANT</span></div>
+  <div class="stat"><small>Net Liquidity</small><b id="bal">$0</b></div>
+  <div class="stat"><small>Day P&amp;L</small><b id="pnl" class="up">+$0</b></div>
+  <div class="stat"><small>Win Rate</small><b id="wr">94.2%</b></div>
+  <div class="stat"><small>Sharpe</small><b>4.87</b></div>
+  <div class="stat"><small>Latency</small><b id="lat">0.31ms</b></div>
+  <div class="live"><i></i>ALGO LIVE · <span id="clock"></span></div>
+</header>
+<div class="ticker"><div id="tk"></div></div>
+<main>
+  <section class="p" id="main"><h3>BTC/USD · 1m · HFT-ALPHA-v7 <em id="mainPx"></em></h3><canvas id="c0"></canvas></section>
+  <section class="p" id="code"><h3>ENGINE OUTPUT <em>● running</em></h3><div class="log" id="log"></div></section>
+  <section class="p" id="book"><h3>ORDER BOOK <em>DEPTH 20</em></h3><div class="bk" id="ob"></div></section>
+  <section id="minis">
+    <div class="p"><h3>EQUITY CURVE <em id="eq"></em></h3><canvas id="c1"></canvas></div>
+    <div class="p"><h3>NVDA <em id="m2"></em></h3><canvas id="c2"></canvas></div>
+    <div class="p"><h3>ETH/USD <em id="m3"></em></h3><canvas id="c3"></canvas></div>
+  </section>
+  <section class="p" id="feed"><h3>EXECUTIONS <em id="fills">0 fills</em></h3><div class="bk"><table id="tr"></table></div></section>
+</main>
+<div class="toast" id="toast">POSITION CLOSED<b id="tval">+$0</b><span id="tsym"></span></div>
+<script>
+const $=id=>document.getElementById(id), R=(a,b)=>a+Math.random()*(b-a), fmt=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+let bal=2847391.22, pnl=0, fills=0;
+
+// ticker
+const syms=[['BTC',67420],['ETH',3480],['SOL',182],['NVDA',1124],['TSLA',248],['AAPL',231],['SPX',5820],['GOLD',2655],['DOGE',.162],['META',588],['AMZN',201],['EUR/USD',1.0912]];
+$('tk').innerHTML=[...syms,...syms].map(([s,p])=>{const c=R(-1.5,4.5);return `<span>${s} <b style="color:#fff">${p<10?p.toFixed(4):fmt(p)}</b> <span class="${c>=0?'up':'dn'}">${c>=0?'▲':'▼'}${Math.abs(c).toFixed(2)}%</span></span>`}).join('');
+
+// charts
+function setup(cv){const d=devicePixelRatio||1,r=cv.getBoundingClientRect();cv.width=r.width*d;cv.height=r.height*d;const x=cv.getContext('2d');x.scale(d,d);return{x,w:r.width,h:r.height}}
+function walk(n,start,drift,vol){const a=[start];for(let i=1;i<n;i++)a.push(a[i-1]*(1+R(-vol,vol)+drift));return a}
+
+// candlesticks
+let candles=[],px=67420;
+for(let i=0;i<90;i++){const o=px,c=o*(1+R(-.003,.0042));candles.push({o,c,h:Math.max(o,c)*(1+R(0,.0015)),l:Math.min(o,c)*(1-R(0,.0015)),v:R(.2,1)});px=c}
+function drawMain(){
+  const {x,w,h}=setup($('c0')),pad=50,ch=h*.78;
+  const hi=Math.max(...candles.map(c=>c.h)),lo=Math.min(...candles.map(c=>c.l));
+  const Y=v=>8+(hi-v)/(hi-lo)*(ch-16), cw=(w-pad)/candles.length;
+  x.strokeStyle='#0f1c24';x.fillStyle='#4b5d68';x.font='10px monospace';
+  for(let i=0;i<=5;i++){const v=lo+(hi-lo)*i/5,y=Y(v);x.beginPath();x.moveTo(0,y);x.lineTo(w-pad,y);x.stroke();x.fillText(fmt(v),w-pad+4,y+3)}
+  candles.forEach((c,i)=>{const up=c.c>=c.o,col=up?'#00ff88':'#ff3b5c',cx=i*cw+cw/2;
+    x.strokeStyle=col;x.beginPath();x.moveTo(cx,Y(c.h));x.lineTo(cx,Y(c.l));x.stroke();
+    x.fillStyle=col;x.fillRect(i*cw+cw*.15,Math.min(Y(c.o),Y(c.c)),cw*.7,Math.max(1,Math.abs(Y(c.o)-Y(c.c))));
+    x.globalAlpha=.35;x.fillRect(i*cw+cw*.15,h-c.v*(h-ch-6),cw*.7,c.v*(h-ch-6));x.globalAlpha=1});
+  // moving average
+  x.strokeStyle='#ffd23f';x.lineWidth=1.2;x.beginPath();
+  candles.forEach((c,i)=>{const s=candles.slice(Math.max(0,i-9),i+1),m=s.reduce((a,b)=>a+b.c,0)/s.length;i?x.lineTo(i*cw+cw/2,Y(m)):x.moveTo(i*cw+cw/2,Y(m))});x.stroke();x.lineWidth=1;
+  // buy markers
+  candles.forEach((c,i)=>{if(i%13===5){x.fillStyle='#00ff88';x.font='bold 9px monospace';x.fillText('▲BUY',i*cw-6,Y(c.l)+14)}});
+  const last=candles[candles.length-1],ly=Y(last.c);
+  x.setLineDash([3,3]);x.strokeStyle='#00ff88';x.beginPath();x.moveTo(0,ly);x.lineTo(w-pad,ly);x.stroke();x.setLineDash([]);
+  x.fillStyle='#00ff88';x.fillRect(w-pad,ly-8,pad,16);x.fillStyle='#000';x.fillText(Math.round(last.c),w-pad+4,ly+4);
+  $('mainPx').textContent='$'+fmt(last.c);
+}
+function tickMain(){const l=candles[candles.length-1];l.c*=1+R(-.0009,.0013);l.h=Math.max(l.h,l.c);l.l=Math.min(l.l,l.c);drawMain()}
+function newCandle(){const o=candles[candles.length-1].c;candles.push({o,c:o,h:o,l:o,v:R(.2,1)});candles.shift()}
+
+const lines=[{id:'c1',d:walk(120,1e6,.004,.006),lab:'eq'},{id:'c2',d:walk(120,1080,.0012,.008),lab:'m2'},{id:'c3',d:walk(120,3300,.0015,.009),lab:'m3'}];
+function drawLine(L){
+  const {x,w,h}=setup($(L.id)),d=L.d,hi=Math.max(...d),lo=Math.min(...d),Y=v=>6+(hi-v)/(hi-lo||1)*(h-12),X=i=>i/(d.length-1)*w;
+  const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(0,255,136,.35)');g.addColorStop(1,'rgba(0,255,136,0)');
+  x.beginPath();d.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(0,Y(v)));x.strokeStyle='#00ff88';x.lineWidth=1.5;x.shadowColor='#00ff88';x.shadowBlur=6;x.stroke();x.shadowBlur=0;
+  x.lineTo(w,h);x.lineTo(0,h);x.fillStyle=g;x.fill();
+  const ch=(d[d.length-1]/d[0]-1)*100;$(L.lab).textContent=(ch>=0?'+':'')+ch.toFixed(2)+'%';
+}
+function tickLines(){lines.forEach(L=>{L.d.push(L.d[L.d.length-1]*(1+R(-.005,.0075)));L.d.shift();drawLine(L)})}
+
+// code log
+const fns=['arb_scan','delta_hedge','vol_surface','kalman_filter','orderflow_imbalance','momentum_ignite','latency_arb','gamma_scalp','mean_revert','lstm_predict'];
+const venues=['BINANCE','CME','NASDAQ','COINBASE','KRAKEN','NYSE','BYBIT'];
+const pick=a=>a[Math.floor(Math.random()*a.length)], hex=n=>[...Array(n)].map(()=>'0123456789abcdef'[Math.random()*16|0]).join('');
+const gens=[
+  ()=>`[${pick(fns)}] σ=${R(.1,.9).toFixed(4)} μ=${R(-.01,.03).toFixed(5)} z=${R(-3,3).toFixed(3)}`,
+  ()=>`>> ROUTE ${pick(['BUY','SELL'])} ${R(.1,40).toFixed(3)} ${pick(syms)[0]} @ ${pick(venues)} [ACK ${R(.08,.6).toFixed(2)}ms]`,
+  ()=>`<span class="c">// tensor[${R(0,512)|0}] = model.forward(x_t) -> ${R(0,1).toFixed(6)}</span>`,
+  ()=>`0x${hex(8)}  ${hex(4)} ${hex(4)} ${hex(4)} ${hex(4)}  ${hex(4)} ${hex(4)}`,
+  ()=>`signal.confidence = ${R(.86,.999).toFixed(4)}  → EXECUTE`,
+  ()=>`<span class="ok">✔ FILLED ${pick(syms)[0]} pnl=+$${fmt(R(120,9800))}</span>`,
+  ()=>`<span class="w">⚠ spread anomaly detected ${pick(venues)}↔${pick(venues)} Δ=${R(.01,.4).toFixed(3)}%</span>`,
+  ()=>`for (i=0;i<${R(1e3,9e4)|0};i++) book[i] ^= hash(0x${hex(6)});`,
+  ()=>`ws://feed.${pick(venues).toLowerCase()} :: ${R(800,9000)|0} msgs/s  buf=${R(10,99)|0}%`,
+  ()=>`await ${pick(fns)}(window=${R(5,500)|0}, alpha=${R(0,1).toFixed(3)});`,
+];
+const log=$('log');
+function addLog(){const d=document.createElement('div');const t=new Date().toISOString().slice(11,23);d.innerHTML=`<span class="c">${t}</span> ${pick(gens)()}`;log.appendChild(d);while(log.children.length>80)log.firstChild.remove();log.scrollTop=1e9;
+  const max=Math.floor(log.clientHeight/15.4);while(log.children.length>max&&max>0)log.firstChild.remove()}
+
+// order book
+function drawBook(){const mid=candles[candles.length-1].c;let a='',b='';
+  for(let i=9;i>=0;i--){const p=mid+(i+1)*R(1.5,3),q=R(.01,4);a+=`<tr class="bar" style="--w:${q*25}%;--c:#ff3b5c"><td class="dn">${fmt(p)}</td><td>${q.toFixed(4)}</td><td>${fmt(p*q)}</td></tr>`}
+  for(let i=0;i<10;i++){const p=mid-(i+1)*R(1.5,3),q=R(.01,4);b+=`<tr class="bar" style="--w:${q*25}%;--c:#00ff88"><td class="up">${fmt(p)}</td><td>${q.toFixed(4)}</td><td>${fmt(p*q)}</td></tr>`}
+  $('ob').innerHTML=`<table>${a}</table><div class="spread up">${fmt(mid)} ▲</div><table>${b}</table>`}
+
+// executions + toast
+const tr=$('tr');
+function addFill(){const s=pick(syms),side=Math.random()<.75?'BUY':'SELL',p=Math.random()<.88?R(80,6400):-R(40,900);
+  fills++;pnl+=p;bal+=p;$('fills').textContent=fills+' fills';
+  const row=tr.insertRow(0);row.className='flash';row.innerHTML=`<td>${new Date().toTimeString().slice(0,8)}</td><td class="${side==='BUY'?'up':'dn'}">${side} ${s[0]}</td><td class="${p>0?'up':'dn'}">${p>0?'+':'-'}$${fmt(Math.abs(p))}</td>`;
+  while(tr.rows.length>30)tr.deleteRow(-1)}
+function toast(){const v=R(8000,48000);pnl+=v;bal+=v;$('tval').textContent='+$'+fmt(v);$('tsym').textContent=pick(syms)[0]+' · '+pick(fns);$('toast').classList.add('on');setTimeout(()=>$('toast').classList.remove('on'),3200)}
+
+// header
+function hdr(){bal+=R(-40,180);pnl+=R(-40,180);$('bal').textContent='$'+fmt(bal);$('pnl').textContent=(pnl>=0?'+$':'-$')+fmt(Math.abs(pnl));$('pnl').className=pnl>=0?'up':'dn';
+  $('lat').textContent=R(.12,.48).toFixed(2)+'ms';$('wr').textContent=R(93.8,94.6).toFixed(1)+'%';$('clock').textContent=new Date().toTimeString().slice(0,8)}
+
+pnl=R(41000,68000);
+for(let i=0;i<14;i++)addFill();
+function drawAll(){drawMain();lines.forEach(drawLine)}
+drawAll();drawBook();hdr();
+addEventListener('resize',drawAll);
+setInterval(tickMain,250);setInterval(newCandle,4000);setInterval(tickLines,600);
+setInterval(addLog,90);setInterval(drawBook,700);setInterval(addFill,1400);setInterval(hdr,200);
+setTimeout(toast,2500);setInterval(toast,11000);
+</script>
+</body>
+</html>
