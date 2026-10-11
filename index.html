@@ -63,7 +63,8 @@ body.hit{animation:hit .5s}
 /* phone-style message banner */
 .msg{position:fixed;top:12px;left:50%;z-index:60;width:min(360px,calc(100vw - 32px));transform:translate(-50%,-140%);transition:transform .45s cubic-bezier(.2,1.2,.4,1);background:rgba(40,40,44,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;font:13px/1.35 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer}
 .msg.on{transform:translate(-50%,0)}
-.msg .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ff7eb3,#ff758c 50%,#ffb88c);display:flex;align-items:center;justify-content:center;font-weight:600;flex:none}
+.msg .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ff7eb3,#ff758c 50%,#ffb88c);display:flex;align-items:center;justify-content:center;font-weight:600;flex:none;position:relative;overflow:hidden}
+.msg .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 25%}
 .msg .bd{flex:1;min-width:0}
 .msg .top{display:flex;justify-content:space-between;font-size:12px;color:#aaa}
 .msg .top b{color:#fff;font-size:13px}
@@ -108,7 +109,7 @@ body.hit{animation:hit .5s}
   <section class="p" id="feed"><h3>EXECUTIONS <em id="fills">0 fills</em></h3><div class="bk"><table id="tr"></table></div></section>
 </main>
 <div class="toast" id="toast"><span id="ttl">POSITION CLOSED</span><b id="tval">+$0</b><span id="tsym"></span></div>
-<div class="msg" id="msg"><div class="av">MG</div><div class="bd"><div class="top"><b>Majo Gomes 💕</b><span>now</span></div><div class="tx" id="msgTx"></div></div></div>
+<div class="msg" id="msg"><div class="av">MG<img src="majo.jpg" alt="" onerror="this.remove()"></div><div class="bd"><div class="top"><b>Majo Gomes 💕</b><span>now</span></div><div class="tx" id="msgTx"></div></div></div>
 <div id="gate"><div class="big">APEX//QUANT</div><pre id="boot"></pre><div class="btn">[ CLICK TO ACCESS TERMINAL ]</div></div>
 <button id="mute">♪ SOUND ON</button>
 <audio id="song" src="song.mp3" loop preload="auto"></audio>
