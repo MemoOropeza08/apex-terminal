@@ -69,6 +69,17 @@ body.hit{animation:hit .5s}
 .msg .top{display:flex;justify-content:space-between;font-size:12px;color:#aaa}
 .msg .top b{color:#fff;font-size:13px}
 .msg .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg{flex-direction:column;align-items:stretch;gap:0;cursor:default}
+.msg .hd{display:flex;gap:10px;align-items:center;cursor:pointer}
+.msg .qr{display:none;margin-top:10px;border-top:1px solid rgba(255,255,255,.12);padding-top:10px}
+.msg.open .qr{display:block}.msg.open .tx{display:none}
+.msg .th{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;margin-bottom:8px}
+.msg .b{max-width:78%;padding:7px 11px;border-radius:17px;font-size:14px;overflow-wrap:anywhere}
+.msg .b.them{align-self:flex-start;background:#3a3a3c}.msg .b.me{align-self:flex-end;background:#0a84ff}
+.msg .st{align-self:flex-end;font-size:10px;color:#999}
+.msg .row{display:flex;gap:6px;align-items:center}
+.msg .row input{flex:1;min-width:0;background:transparent;border:1px solid #555;border-radius:18px;color:#fff;padding:7px 12px;font:14px -apple-system,BlinkMacSystemFont,sans-serif;outline:none}
+.msg .row button{width:30px;height:30px;flex:none;border-radius:50%;border:none;background:#0a84ff;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
 #gate{position:fixed;inset:0;z-index:70;background:#030506;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;cursor:pointer;color:var(--g);text-align:center;padding:16px}
 #gate .big{font-size:28px;letter-spacing:6px;font-weight:700;text-shadow:0 0 16px rgba(0,255,136,.6)}
 #gate .btn{border:1px solid var(--g);padding:12px 26px;letter-spacing:3px;animation:p 1.4s infinite}
@@ -109,7 +120,7 @@ body.hit{animation:hit .5s}
   <section class="p" id="feed"><h3>EXECUTIONS <em id="fills">0 fills</em></h3><div class="bk"><table id="tr"></table></div></section>
 </main>
 <div class="toast" id="toast"><span id="ttl">POSITION CLOSED</span><b id="tval">+$0</b><span id="tsym"></span></div>
-<div class="msg" id="msg"><div class="av">MG<img src="majo.jpg" alt="" onerror="this.remove()"></div><div class="bd"><div class="top"><b>Majo Gomes 💕</b><span>now</span></div><div class="tx" id="msgTx"></div></div></div>
+<div class="msg" id="msg"><div class="hd" id="msgHd"><div class="av">MG<img src="majo.jpg" alt="" onerror="this.remove()"></div><div class="bd"><div class="top"><b>Majo Gomes 💕</b><span>now</span></div><div class="tx" id="msgTx"></div></div></div><div class="qr"><div class="th" id="th"></div><div class="row"><input id="qrIn" placeholder="iMessage" autocomplete="off"><button id="qrSend">↑</button></div></div></div>
 <div id="gate"><div class="big">APEX//QUANT</div><pre id="boot"></pre><div class="btn">[ CLICK TO ACCESS TERMINAL ]</div></div>
 <button id="mute">♪ SOUND ON</button>
 <audio id="song" src="song.mp3" loop preload="auto"></audio>
@@ -233,8 +244,14 @@ function ding(){try{actx=actx||new (window.AudioContext||window.webkitAudioConte
   g.gain.setValueAtTime(0,actx.currentTime+i*.12);g.gain.linearRampToValueAtTime(.18,actx.currentTime+i*.12+.01);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+i*.12+.35);
   o.connect(g).connect(actx.destination);o.start(actx.currentTime+i*.12);o.stop(actx.currentTime+i*.12+.4)})}catch(e){}}
 let mTimer;
-function text(t){$('msgTx').textContent=t;$('msg').classList.add('on');ding();clearTimeout(mTimer);mTimer=setTimeout(()=>$('msg').classList.remove('on'),5000)}
-$('msg').onclick=()=>$('msg').classList.remove('on');
+const msg=$('msg'),closeMsg=()=>msg.classList.remove('on','open');
+function bubble(t,who){$('th').querySelector('.st')?.remove();const d=document.createElement('div');d.className='b '+who;d.textContent=t;$('th').appendChild(d);$('th').scrollTop=1e9}
+function text(t){$('msgTx').textContent=t;bubble(t,'them');msg.classList.add('on');ding();clearTimeout(mTimer);if(!msg.classList.contains('open'))mTimer=setTimeout(closeMsg,5000)}
+$('msgHd').onclick=()=>{clearTimeout(mTimer);msg.classList.add('on','open');setTimeout(()=>$('qrIn').focus(),250)};
+function send(){const v=$('qrIn').value.trim();if(!v)return;bubble(v,'me');$('qrIn').value='';
+  const s=document.createElement('div');s.className='st';s.textContent='Delivered';$('th').appendChild(s);clearTimeout(mTimer);mTimer=setTimeout(closeMsg,2200)}
+$('qrSend').onclick=send;$('qrIn').onkeydown=e=>{if(e.key==='Enter')send();if(e.key==='Escape')closeMsg()};
+document.addEventListener('click',e=>{if(msg.classList.contains('open')&&!msg.contains(e.target))closeMsg()});
 
 // ---------- boot ----------
 pnl=R(21000,48000);
